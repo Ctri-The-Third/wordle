@@ -10,12 +10,16 @@ class Wordle:
         #self._saveDict(path, self.list)
         
     def contains(self,chars:str, pattern:str) -> list:
+        self.pattern = pattern
+        self.chars = chars
         if len(chars) == 5 and len(pattern) == 5:
             self._edge_case_check()    
             self.contains_green()
             self.exclude_misses()
             self.contains_yellow()
-            
+        
+        else:
+            print ("Didn't enter the right length of guesses/pattern, displaying opener [%s/%s]" % (len(chars),len(pattern)))    
         for i in range(0,min(5,len(self.list))):
             print(self.list[i].strip())
 
@@ -42,9 +46,6 @@ class Wordle:
                 re_string = "(?=.*[%s].*)" % (char)
                 
                 self._trim(re.compile(re_string))
-
-        #(?=.*[uo].*){2}
-
     def exclude_misses(self):
         chars = self.chars
         pattern = self.pattern
@@ -54,7 +55,10 @@ class Wordle:
         re_string = "[^%s]{5}" % (re_string)
         self._trim(re.compile(re_string))
         #[^abou]{5}
-        
+
+
+    def _edge_case_check(self):
+        pass 
 
     def _extract(self,chars,pattern,patternChar,other_char = "."):
         return_str = ""
@@ -98,11 +102,12 @@ class Wordle:
                     file.write("{}".format(line))
 
 if __name__ == "__main__":
-    print (sys.argv)
-    path = "wordle_dict_base.txt" if "-r" in sys.argv else "wordle_dict.txt"
-    print(path)
-    w = Wordle(path)
-    known=input("input your guesses, leave empty for an opener\n")
-    pattern = input ("input your guesses results as B, Y, or G\n")
-    w.contains(known,pattern)
-    w._saveDict(r"wordle_dict.txt")
+    if "-r" in sys.argv:
+        w = Wordle("wordle_dict_base.txt")
+        w._saveDict("wordle_dict.txt")
+    else:
+        w = Wordle("wordle_dict.txt")
+        known=input("input your guesses, leave empty for an opener\n")
+        pattern = input ("input your guesses results as B, Y, or G\n")
+        w.contains(known,pattern)
+        w._saveDict(r"wordle_dict.txt")

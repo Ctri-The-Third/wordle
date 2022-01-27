@@ -1,2 +1,2 @@
 #!/bin/bash
-cd /home/pi/github/wordle && python3 wordle.py
+cd /home/pi/github/wordle && python3 wordle.py $1
