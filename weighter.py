@@ -9,6 +9,10 @@ class weighter():
         
         self.l = logging.getLogger("weighter")
         self.valued_words={}
+        self.letter_position_frequencies = self._init_position_frequencies()
+        self.letter_frequencies = self._generate_blank_letters_obj()
+                
+
         self._load_file(load_path)
         self._value_words(self.words)
         self._save_file(save_path)
@@ -20,7 +24,12 @@ class weighter():
 
         self.valued_words=dict(sorted(temp.items(),key= lambda x:-x[1]))
         
-
+    def _init_position_frequencies(self):
+        return [self._generate_blank_letters_obj(),
+            self._generate_blank_letters_obj(),
+            self._generate_blank_letters_obj(),
+            self._generate_blank_letters_obj(),
+            self._generate_blank_letters_obj()] 
 
 
     def _value_word(self,word) -> int:
@@ -53,18 +62,19 @@ class weighter():
     def _load_file(self, path):
         words = []
         new_words = []
+        length = len(self.letter_position_frequencies)
+
         with open(path) as file:
             words = file.readlines()
         
-        letterpos = [self._generate_blank_letters_obj(),
-            self._generate_blank_letters_obj(),
-            self._generate_blank_letters_obj(),
-            self._generate_blank_letters_obj(),
-            self._generate_blank_letters_obj()] 
-        letters = self._generate_blank_letters_obj()
+        letterpos = self.letter_position_frequencies
+        letters = self.letter_frequencies
         for word in words:
-            
             word = word.upper().strip()
+            if len(word) != length:
+                word = " "* length
+            
+            
             new_word = ""
             for i in range(len(word)):
                 
@@ -73,13 +83,15 @@ class weighter():
                     letters[letter] += 1
                     letterpos[i][letter] += 1
                     new_word += letter
-            new_words.append(new_word)            
+            if len(new_word) == length:
+                new_words.append(new_word)            
 
 
         self.words = new_words
         self.letter_frequencies = letters
         self.letter_position_frequencies = letterpos
                     
+    
     def _generate_blank_letters_obj(self):
         letter_string = VALID_LETTERS
         return_obj = {}
@@ -88,5 +100,5 @@ class weighter():
         return return_obj
 
 if __name__ == "__main__":
-    w = weighter("wordle_list_extract.txt","wordle_dict.txt")
+    w = weighter("linux_dict.txt","wordle_dict_base_linux_weighted.txt")
     
