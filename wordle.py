@@ -88,21 +88,21 @@ class Wordle:
         self.pattern = pattern
         self.chars = chars
         if len(chars) == 5 and len(pattern) == 5:
-            self._edge_case_check()
-            self.contains_green()
-            self.exclude_misses()
-            self.contains_yellow()
+            
+            self.process_greens()
+            self.process_yellows()
+            self.process_misses()
+            
         else:
             outstr = "Didn't enter the right length of guesses/pattern, displaying opener [%s/%s]"
             self.lo.info(outstr % (len(chars), len(pattern)))
         if len(self.list) == 0:
             logging.warning("No options remain in the list! D:")
             return "00000"
-        for i in range(0, min(5, len(self.list))):
-            self.lo.info(" Guess:" + self.list[i].strip())
+        self.lo.info(" Guess:" + self.list[0].strip())
         return self.list[0].strip()
 
-    def contains_green(self) -> list:
+    def process_greens(self) -> list:
         chars = self.chars
         pattern = self.pattern
         if "G" not in pattern:
@@ -110,7 +110,7 @@ class Wordle:
         re_string = self._extract(chars, pattern, "G")
         self._trim(re.compile(re_string))
 
-    def contains_yellow(self):
+    def process_yellows(self):
         chars = self.chars
         pattern = self.pattern
         if "Y" not in pattern:
@@ -123,26 +123,57 @@ class Wordle:
                 re_string = "%s[^%s]%s" % (("."*(i)), char, ("."*(4-i)))
                 self._trim(re.compile(re_string))
                 re_string = "(?=.*[%s].*)" % (char)
-
                 self._trim(re.compile(re_string))
 
-    def exclude_misses(self):
+    def process_misses(self):
         chars = self.chars
         pattern = self.pattern
         if "B" not in pattern:
             return
-        re_string = self._extract(chars, pattern, "B", other_char="")
-        re_string = "[^%s]{5}" % (re_string)
+
+        
+        #re_string = self._extract(chars, pattern, "B", other_char="")
+        #Aroma where A is a green or yellow
+
+
+        re_string = self._get_misses_regex()
         self._trim(re.compile(re_string))
         # [^abou]{5}
 
-    def _edge_case_check(self):
-        pass
+
+    def _get_misses_regex(self) -> str: 
+        #AROMA
+        #GBBBB
+        chars = self.chars 
+        pattern = self.pattern
+        required_letters = {} 
+        
+        for i in range (0,5):
+            times = self._instances_of(chars[i],chars)
+            if times == 1 and pattern[i]  == "B":
+                required_letters[chars[i]] = 0
+            elif pattern[i] in ["Y","G"]:
+                required_letters[chars[i]] = 1 if chars[i] not in required_letters else required_letters[chars[i]] + 1
+                #The letter was used more than once.
+                #if the letter was used more than once, then the regex must find words that contain that letter X times, where X is the number of Ys or Gs
+                #so for Aroma, we get
+
+
+        return_regex = ""
+        flat_excludes = ""
+        for letter in required_letters:
+            return_regex += "(?=.*[%s]{%s}.*)" % (letter, required_letters[letter]) if required_letters[letter] > 0 else ""
+            flat_excludes += letter if required_letters[letter] == 0 else ""
+        return_regex = "%s[^%s]{5}" % (return_regex,flat_excludes)
+        self.lo.debug(return_regex)
+        return return_regex
+                
 
     def _extract(self, chars, pattern, patternChar, other_char="."):
         return_str = ""
+        
         if len(chars) == 5 and len(pattern) == 5 and patternChar in pattern:
-            chars = chars.lower()
+            chars = chars.upper()
             for i in range(0, 5):
                 return_str += chars[i] if pattern[i] == patternChar else other_char
         else:
@@ -153,12 +184,13 @@ class Wordle:
         self.lo.debug("Current entries [%s], about to trim with: %s" % (len(self.list), regex))
         newList = []
         for string in self.list:
-            newstring = string.lower().strip().split(" ")
+            newstring = string.upper().strip().split(" ")
             word = newstring[0]
             if re.match(regex, word):
                 # print(string)
                 newList.append(string)
         self.list = newList
+        self.lo.debug("new entries list [%s]" % len(self.list))
 
     def _loadDict(self, path) -> list:
         data_list = []
@@ -221,7 +253,7 @@ if __name__ == "__main__":
     w = Wordle("wordle_dict_base_extract_weighted.txt")
     w.solve()
     if "UTF-8" in sys.stdout.encoding:
-        print(w.result_string())
+        print(w.result_string(discord=True))
     else: 
         print(w.result_string(overide_b = "B", overide_y="Y", overide_g="G"))
     
