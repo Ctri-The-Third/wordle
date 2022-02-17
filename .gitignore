@@ -4,3 +4,10 @@ wordle_dict.txt
 wordle_list_extract.txt
 .vscode/launch.json
 .vscode/settings.json
+bin/answers.json
+linux_dict.txt
+wordle
+wordle_dict_base_english_language.txt
+wordle_dict_base_extract_weighted.txt
+wordle_dict_base_linux_weighted.txt
+wordle.bat
