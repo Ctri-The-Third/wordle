@@ -217,7 +217,7 @@ if __name__ == "__main__":
     format = "%(levelname)s - %(name)s - %(message)s"
     logging.basicConfig(handlers=[StreamHandler()],
                         format=format,
-                        level=logging.INFO)
+                        level=logging.DEBUG)
     w = Wordle("wordle_dict_base_extract_weighted.txt")
     w.solve()
     if "UTF-8" in sys.stdout.encoding:

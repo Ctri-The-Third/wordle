@@ -4,3 +4,4 @@ wordle_dict.txt
 wordle_list_extract.txt
 .vscode/launch.json
 .vscode/settings.json
+bin/answers.json
