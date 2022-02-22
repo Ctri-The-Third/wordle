@@ -1,3 +1,4 @@
+from dis import disco
 import logging
 from logging import Formatter, StreamHandler
 from operator import indexOf
@@ -79,6 +80,14 @@ class Wordle:
         count = len(filtered_string)
         return count 
 
+    def _times_missed(self, char, chars,pattern) -> int:
+        "counts the number of times a character is missed"
+        ret_count = 0
+        for i in range(len(chars)):
+            if chars[i] == char and pattern[i] == "B": 
+                ret_count += 1
+        return ret_count
+
     def contains(self, chars: str, pattern: str) -> list:
         """Trims down the internal dictionary of guesses based on the feedback in the pattern. Pattern should be 5 characters, containing the following 
 
@@ -122,7 +131,7 @@ class Wordle:
 
                 re_string = "%s[^%s]%s" % (("."*(i)), char, ("."*(4-i)))
                 self._trim(re.compile(re_string))
-                re_string = "(?=.*[%s].*)" % (char)
+                re_string = "(?=.*[%s].*)." % (char)
                 self._trim(re.compile(re_string))
 
     def process_misses(self):
@@ -136,37 +145,43 @@ class Wordle:
         #Aroma where A is a green or yellow
 
 
-        re_string = self._get_misses_regex()
-        self._trim(re.compile(re_string))
-        # [^abou]{5}
+        re_strings = self._get_misses_regexes()
+        for re_string in re_strings:
+            self._trim(re.compile(re_string))
+        
 
 
-    def _get_misses_regex(self) -> str: 
-        #AROMA
-        #GBBBB
+    def _get_misses_regexes(self) -> str: 
         chars = self.chars 
         pattern = self.pattern
         required_letters = {} 
         
         for i in range (0,5):
+            
+            misses = self._times_missed(chars[i],chars,pattern)
             times = self._instances_of(chars[i],chars)
-            if times == 1 and pattern[i]  == "B":
-                required_letters[chars[i]] = 0
-            elif pattern[i] in ["Y","G"]:
-                required_letters[chars[i]] = 1 if chars[i] not in required_letters else required_letters[chars[i]] + 1
-                #The letter was used more than once.
-                #if the letter was used more than once, then the regex must find words that contain that letter X times, where X is the number of Ys or Gs
-                #so for Aroma, we get
+            if pattern[i] == "B":
+                if misses == times:
+                    required_letters[chars[i]] = 0
+                elif times > misses:
+                    required_letters[chars[i]] = 1 if chars[i] not in required_letters else required_letters[chars[i]] + 1
+                        #The letter was used more than once.
+                        #if the letter was used more than once, then the regex must find words that contain that letter X times, where X is the number of Ys or Gs
+                        #so for Aroma, we get
+        
+                
 
 
-        return_regex = ""
+        return_regexes = []
         flat_excludes = ""
         for letter in required_letters:
-            return_regex += "(?=.*[%s]{%s}.*)" % (letter, required_letters[letter]) if required_letters[letter] > 0 else ""
+            if required_letters[letter] == 1:
+                return_regexes.append( ".*%s(?!.*%s.*)." % (letter, letter))
             flat_excludes += letter if required_letters[letter] == 0 else ""
-        return_regex = "%s[^%s]{5}" % (return_regex,flat_excludes)
-        self.lo.debug(return_regex)
-        return return_regex
+        
+        if flat_excludes != "":
+            return_regexes.append("[^%s]{5}" % (flat_excludes))
+        return return_regexes
                 
 
     def _extract(self, chars, pattern, patternChar, other_char="."):
@@ -183,6 +198,7 @@ class Wordle:
     def _trim(self, regex):
         self.lo.debug("Current entries [%s], about to trim with: %s" % (len(self.list), regex))
         newList = []
+        
         for string in self.list:
             newstring = string.upper().strip().split(" ")
             word = newstring[0]
@@ -227,20 +243,20 @@ class Wordle:
     def solve(self, use_yesterdays_answer_as_opener = True, overide_opener = None):
         
         
-        w._saveDict("wordle_dict.txt")
+        self._saveDict("wordle_dict.txt")
 
         if use_yesterdays_answer_as_opener:
             next_guess = get_answer(datetime.now() - timedelta(days=1))[0]
         else:
-            next_guess = w.contains("","")
+            next_guess = self.contains("","")
         if overide_opener is not None:
             next_guess = overide_opener
         
         for i in range(0,6):
-            result_pattern = w.guess(next_guess[0:5])
+            result_pattern = self.guess(next_guess[0:5])
             
-            next_guess = w.contains(next_guess,result_pattern)[0:5]
-            w.feedback.append(result_pattern)
+            next_guess = self.contains(next_guess,result_pattern)[0:5]
+            self.feedback.append(result_pattern)
             if result_pattern == SUCCESS_STRING:
                 break
         
@@ -251,9 +267,11 @@ if __name__ == "__main__":
                         format=format,
                         level=logging.DEBUG)
     w = Wordle("wordle_dict_base_extract_weighted.txt")
+    discord = True if "-d" in sys.argv else False 
+
     w.solve()
     if "UTF-8" in sys.stdout.encoding:
-        print(w.result_string(discord=True))
+        print(w.result_string(discord=discord))
     else: 
-        print(w.result_string(overide_b = "B", overide_y="Y", overide_g="G"))
+        print(w.result_string(overide_b = "B", overide_y="Y", overide_g="G", discord = discord))
     
