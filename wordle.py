@@ -158,8 +158,8 @@ class Wordle:
         
         for i in range (0,5):
             
-            misses = self._times_missed(chars[i],chars,pattern)
-            times = self._instances_of(chars[i],chars)
+            misses = self._times_missed(chars[i], chars, pattern)
+            times = self._instances_of(chars[i], chars)
             if pattern[i] == "B":
                 if misses == times:
                     required_letters[chars[i]] = 0
@@ -176,7 +176,7 @@ class Wordle:
         flat_excludes = ""
         for letter in required_letters:
             if required_letters[letter] == 1:
-                return_regexes.append( ".*%s(?!.*%s.*)." % (letter, letter))
+                return_regexes.append( ".*%s(?!.*%s.*)" % (letter, letter))
             flat_excludes += letter if required_letters[letter] == 0 else ""
         
         if flat_excludes != "":
