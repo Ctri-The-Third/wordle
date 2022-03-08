@@ -96,12 +96,10 @@ class Wordle:
         * `G` means the guess is the correct character & location"""  
         self.pattern = pattern
         self.chars = chars
-        if len(chars) == 5 and len(pattern) == 5:
-            
+        if len(chars) == 5 and len(pattern) == 5:     
             self.process_greens()
             self.process_yellows()
             self.process_misses()
-            
         else:
             outstr = "Didn't enter the right length of guesses/pattern, displaying opener [%s/%s]"
             self.lo.info(outstr % (len(chars), len(pattern)))
@@ -131,7 +129,7 @@ class Wordle:
 
                 re_string = "%s[^%s]%s" % (("."*(i)), char, ("."*(4-i)))
                 self._trim(re.compile(re_string))
-                re_string = "(?=.*[%s].*)." % (char)
+                re_string = "(?=.*[%s])." % (char)
                 self._trim(re.compile(re_string))
 
     def process_misses(self):
@@ -156,7 +154,7 @@ class Wordle:
         pattern = self.pattern
         required_letters = {} 
         
-        for i in range (0,5):
+        for i in range(0, 5):
             
             misses = self._times_missed(chars[i], chars, pattern)
             times = self._instances_of(chars[i], chars)
@@ -176,7 +174,8 @@ class Wordle:
         flat_excludes = ""
         for letter in required_letters:
             if required_letters[letter] == 1:
-                return_regexes.append( ".*%s(?!.*%s.*)" % (letter, letter))
+                
+                return_regexes.append("^[^{0}]*{0}(?!.*{0}.*)".format(letter))
             flat_excludes += letter if required_letters[letter] == 0 else ""
         
         if flat_excludes != "":
@@ -202,7 +201,7 @@ class Wordle:
         for string in self.list:
             newstring = string.upper().strip().split(" ")
             word = newstring[0]
-            if re.match(regex, word):
+            if regex.match(word) is not None:
                 # print(string)
                 newList.append(string)
         self.list = newList
@@ -240,22 +239,17 @@ class Wordle:
         
         return re_str
     
-    def solve(self, use_yesterdays_answer_as_opener = True, overide_opener = None):
-        
-        
+    def solve(self, use_yesterdays_answer_as_opener = True, overide_opener = None):     
         self._saveDict("wordle_dict.txt")
-
         if use_yesterdays_answer_as_opener:
             next_guess = get_answer(datetime.now() - timedelta(days=1))[0]
         else:
             next_guess = self.contains("","")
         if overide_opener is not None:
             next_guess = overide_opener
-        
-        for i in range(0,6):
+        for i in range(0, 6):
             result_pattern = self.guess(next_guess[0:5])
-            
-            next_guess = self.contains(next_guess,result_pattern)[0:5]
+            next_guess = self.contains(next_guess, result_pattern)[0:5]
             self.feedback.append(result_pattern)
             if result_pattern == SUCCESS_STRING:
                 break

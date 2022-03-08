@@ -10,6 +10,7 @@ import logging
 import wordle
 import sys 
 
+   
 
 class wordle_announcer(discord.Client):
     def __init__(self, targets, wordle_dict_path, *, loop=None, **options):
@@ -28,13 +29,19 @@ class wordle_announcer(discord.Client):
         for guild in self.guilds:
             await self.get_thread(guild,self._connection)
 
+        exit()
+
 
 
     async def send_to_users(self):
+        targets = {} 
+        
         for member in self.get_all_members():
             if member.id in config["userIDs"]:
-                breakpoint()
-                await member.send(self.outstr)
+                targets[member.id] = member
+                
+        for member_id in targets:
+            await targets[member_id].send(self.outstr)
 
     async def send_to_channels(self):
         for channel in config["channels"]:
@@ -87,7 +94,7 @@ if __name__ == "__main__":
         config = json.load(json_file)
     if "logging" in config:
         try: 
-            logging.basicConfig(level=config["logging"],format='%(asctime)s-%(process)d-%(name)s-%(levelname)s-%(message)s', handlers=[logging.StreamHandler(sys.stdout)])
+            logging.basicConfig(level=config["logging"],format='%(asctime)s-%(process)d-%(name)s-%(levelname)s-%(message)s', handlers=[logging.StreamHandler(sys.stdout),logging.FileHandler("disc_announce.log")])
             logging.info("Set logging level to %s")
         except Exception as e :
             logging.error("couldn't set logging level - check auth.json for invalid values. \t %s" % (e))
